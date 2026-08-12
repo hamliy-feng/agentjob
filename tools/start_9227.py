@@ -6,10 +6,11 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PROFILE = ROOT / "browser-profile"
+PROFILE = ROOT.parent / "browser-profile"
 ENDPOINT = "http://127.0.0.1:9227/json/version"
 CHROME = Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe")
-EDGE = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
+EDGE_64 = Path(r"C:\Program Files\Microsoft\Edge\Application\msedge.exe")
+EDGE_32 = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
 
 
 def online() -> bool:
@@ -24,7 +25,7 @@ def main() -> int:
     if online():
         print("9227 already online")
         return 0
-    exe = CHROME if CHROME.exists() else EDGE if EDGE.exists() else None
+    exe = CHROME if CHROME.exists() else EDGE_64 if EDGE_64.exists() else EDGE_32 if EDGE_32.exists() else None
     if exe is None:
         print("Chrome/Edge not found")
         return 1
