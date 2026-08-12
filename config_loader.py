@@ -143,6 +143,7 @@ def load_preferences() -> dict[str, Any]:
             "accept_onsite": _bool3(work.get("是否接受长期驻场客户", "")),
             "accept_part_time": _bool3(work.get("是否接受兼职", "")),
             "accept_internship": _bool3(work.get("是否接受实习", "")),
+            "internship_only": _bool3(work.get("当前仅接受实习", "")),
             "min_rest_days_per_week": _number(work.get("最低每周休息天数", "")),
         },
         "hard_reject": s.get("硬性淘汰", {}).get("_lines", []),

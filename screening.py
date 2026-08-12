@@ -93,6 +93,33 @@ def salary_info(s: str) -> dict:
     return out
 
 
+def _company_size_floor(value: str) -> float | None:
+    text = (value or "").replace(",", "").strip()
+    if not text:
+        return None
+    m = re.search(r"(\d+)\s*[-~—至]\s*(\d+)\s*人", text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(\d+)\s*人以上", text)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"(\d+)\s*人", text)
+    if m:
+        return float(m.group(1))
+    return None
+
+
+def _explicit_outsourcing(full: str) -> list[str]:
+    text = full or ""
+    hits = []
+    if re.search(r"劳务派遣|派遣制|劳务外派", text):
+        hits.append("劳务派遣")
+    cleaned = re.sub(r"非外包|不是外包|不属于外包|无外包", "", text)
+    if re.search(r"外包公司|服务外包|项目外包|人力外包|外包岗位", cleaned):
+        hits.append("外包")
+    return list(dict.fromkeys(hits))
+
+
 def evaluate_job(job: dict) -> dict:
     candidate = load_candidate()
     prefs = load_preferences()
@@ -117,6 +144,26 @@ def evaluate_job(job: dict) -> dict:
     if ind_hits:
         hard_reasons.append("命中不要的行业：" + "、".join(ind_hits))
 
+    company_pref = prefs.get("company", {})
+    min_company_size = company_pref.get("min_size")
+    company_size_text = str(job.get("company_size") or "")
+    company_size_floor = _company_size_floor(company_size_text)
+    if min_company_size is not None:
+        if company_size_floor is None:
+            hard_reasons.append(f"公司规模未明确，无法确认达到最低要求 {float(min_company_size):g} 人")
+        elif company_size_floor < float(min_company_size):
+            hard_reasons.append(f"公司规模下限 {company_size_floor:g} 人低于最低要求 {float(min_company_size):g} 人")
+        else:
+            reasons.append(f"公司规模满足：{company_size_text}")
+
+    outsourcing_hits = _explicit_outsourcing(full)
+    if company_pref.get("accept_outsourcing") is False and "外包" in outsourcing_hits:
+        hard_reasons.append("明确不接受外包岗位/外包公司")
+    if company_pref.get("accept_dispatch") is False and "劳务派遣" in outsourcing_hits:
+        hard_reasons.append("明确不接受劳务派遣")
+    if prefs.get("work_style", {}).get("accept_onsite") is False and re.search(r"长期驻场|常驻客户现场|长期客户现场", full):
+        hard_reasons.append("明确不接受长期驻场客户")
+
     sal = salary_info(job.get("salary", ""))
     sp = prefs.get("salary", {})
     if sal["kind"] == "monthly_k" and sp.get("min_monthly_k") is not None and sal["min"] is not None and sal["min"] < sp["min_monthly_k"]:
@@ -140,8 +187,11 @@ def evaluate_job(job: dict) -> dict:
     if city_constraints and not _contains(job.get("location", ""), city_constraints):
         hard_reasons.append("城市不在优先/可接受城市范围")
 
-    if prefs.get("work_style", {}).get("accept_internship") is False and ("实习" in job.get("title", "") or sal["kind"] in {"daily", "hourly"}):
+    is_internship = str(job.get("employment_type") or "").lower() == "internship" or "实习" in str(job.get("title") or "")
+    if prefs.get("work_style", {}).get("accept_internship") is False and is_internship:
         hard_reasons.append("明确不接受实习")
+    if prefs.get("work_style", {}).get("internship_only") is True and not is_internship:
+        hard_reasons.append("当前仅接受实习岗位")
 
     min_rest = prefs.get("work_style", {}).get("min_rest_days_per_week")
     rest_days = None
@@ -252,6 +302,9 @@ def run_l1(job_id: str) -> dict:
     except Exception:
         raw = {}
     job["company_intro"] = raw.get("company_intro") or ""
+    job["company_size"] = raw.get("company_size") or ""
+    job["company_industry"] = raw.get("company_industry") or ""
+    job["employment_type"] = raw.get("employment_type") or ""
     result = evaluate_job(job)
     mark_stage(c, job_id, "L1", result["status"], score=result["score"], version="2.1", summary="基础规则筛选", output=result)
     c.commit(); c.close(); return result
