@@ -261,14 +261,17 @@ async function selectJob(id,rerenderLists=true){
   try{state.detail=await getJSON(`/api/jobs/${encodeURIComponent(id)}`);renderDetail(); if(rerenderLists)renderLists();}
   catch(e){toast(e.message,true);renderDetailError(e.message,id);}
 }
-async function refreshDashboard(selectDefault=true){
-  document.body.classList.add('loading');
+async function refreshDashboard(selectDefault=true,silent=false){
+  if(state.loading)return;
+  state.loading=true;
+  if(!silent)document.body.classList.add('loading');
   try{
-    state.dashboard=await getJSON('/api/dashboard'); renderStatus(); renderLists();
+    state.dashboard=await getJSON('/api/dashboard',silent); renderStatus(); renderLists();
     const all=[...(state.dashboard.today_top||[]),...(state.dashboard.qualified||[])];
     if(selectDefault && (!state.selectedId || !all.some(x=>x.job_id===state.selectedId))){ state.selectedId=all[0]?.job_id||null; if(state.selectedId)await selectJob(state.selectedId); }
     else if(state.selectedId) renderLists();
-  }catch(e){toast(`加载失败：${e.message}`,true);if(state.dashboard)renderStatus();}finally{document.body.classList.remove('loading')}
+  }catch(e){if(!silent)toast(`加载失败：${e.message}`,true);if(state.dashboard)renderStatus();}
+  finally{state.loading=false;if(!silent)document.body.classList.remove('loading')}
 }
 $('#refresh-btn')?.addEventListener('click',async()=>{await refreshDashboard(false);if(state.selectedId)await selectJob(state.selectedId,false);});
 $('#job-search').addEventListener('input',e=>{state.query=e.target.value.trim();renderLists();});
@@ -367,5 +370,5 @@ initTheme();
 loadProfileMeta(true);
 refreshDashboard(true);
 setInterval(heartbeat,10000);
-// Top7 是容量上限，不是等待条件；后台一旦出现新的合法候选就立即刷新到页面。
-setInterval(()=>{if(!state.drawer&&!state.loading)refreshDashboard(false);},12000);
+// Top7 是容量上限，不是等待条件；每15秒静默后台刷新，不触发整页 loading/变暗。
+setInterval(()=>{if(!state.loading)refreshDashboard(false,true);},15000);
