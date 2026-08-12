@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import subprocess
+import sys
 
 from config_loader import load_system
 from workflow_db import connect, mark_stage, now_iso, record_source_health
@@ -121,10 +123,15 @@ async def _context():
     from playwright.async_api import async_playwright
     p = await async_playwright().start()
     try:
-        browser = await p.chromium.connect_over_cdp(CDP, slow_mo=SLOW, timeout=15000)
+        browser = await p.chromium.connect_over_cdp(CDP, slow_mo=SLOW, timeout=5000)
     except Exception:
-        await p.stop()
-        raise
+        # Dashboard 点击动作时如果9227没开，自动拉起用户专用浏览器；不绕过登录/安全验证。
+        try:
+            subprocess.run([sys.executable, str(__import__('pathlib').Path(__file__).resolve().parent / 'tools' / 'start_9227.py')], timeout=20, check=False)
+            browser = await p.chromium.connect_over_cdp(CDP, slow_mo=SLOW, timeout=15000)
+        except Exception:
+            await p.stop()
+            raise
     if not browser.contexts:
         await p.stop()
         raise RuntimeError("9227无浏览器context")
@@ -210,7 +217,7 @@ async def verify_job(context, job_id: str) -> dict:
     return {"ok": False, "status": "verification_pending", **check}
 
 
-async def execute_one(context, job_id: str) -> dict:
+async def execute_one(context, job_id: str, *, keep_page: bool = False) -> dict:
     item = claim(job_id)
     if not item:
         return {"ok": False, "status": "not_claimed"}
@@ -221,6 +228,13 @@ async def execute_one(context, job_id: str) -> dict:
             record_source_health("boss_l5", "blocked_security", page.url, "已确认岗位执行时遇到安全校验；未绕过。")
             mark_error(item["job_id"], "security verification encountered; human/browser verification required")
             return {"ok": False, "status": "blocked_security"}
+        try:
+            body_text = await page.locator("body").inner_text(timeout=4000)
+        except Exception:
+            body_text = ""
+        if "登录查看完整内容" in body_text or ("登录/注册" in body_text and "职位描述" not in body_text):
+            mark_error(item["job_id"], "BOSS 9227尚未登录；请在已打开的专用浏览器登录后再投递")
+            return {"ok": False, "status": "needs_login"}
         clicked = None
         for text in ["立即沟通", "立即申请", "投递简历", "申请职位", "继续沟通"]:
             loc = page.get_by_text(text, exact=True)
@@ -245,14 +259,16 @@ async def execute_one(context, job_id: str) -> dict:
             mark_error(item["job_id"], str(e))
         return {"ok": False, "status": "error", "error": str(e)[:1000]}
     finally:
-        await page.close()
+        if not keep_page:
+            try: await page.close()
+            except Exception: pass
 
 
 async def apply_job(job_id: str) -> dict:
     p = browser = None
     try:
         p, browser, context = await _context()
-        return await execute_one(context, job_id)
+        return await execute_one(context, job_id, keep_page=True)
     except Exception as e:
         mark_error(job_id, f"9227浏览器未就绪：{e}")
         return {"ok": False, "status": "browser_unavailable", "error": str(e)[:1000]}
@@ -268,7 +284,7 @@ async def loop_forever() -> None:
         p, browser, context = await _context()
         while True:
             for item in pending():
-                await execute_one(context, item["job_id"])
+                await execute_one(context, item["job_id"], keep_page=False)
             await asyncio.sleep(POLL)
     finally:
         if p is not None:
