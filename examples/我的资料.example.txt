@@ -1,0 +1,29 @@
+# Local candidate profile. This file is ignored by Git after bootstrap.
+
+[基本信息]
+姓名：
+当前城市：广州
+目标期望城市：广州
+最高学历：本科
+毕业年份：
+正式工作年限：
+邮箱：
+电话：
+
+[技能与能力]
+AI Agent
+Python
+SQL
+数据分析
+
+[项目经历]
+示例项目：请替换成你的真实项目
+
+[可证明经历/作品]
+
+[绝对不能虚构]
+学历
+正式任职经历
+成果数字
+
+[其他说明]

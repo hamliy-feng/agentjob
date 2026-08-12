@@ -1,0 +1,2 @@
+# One BOSS search URL per line. Replace with your own location/keywords.
+https://www.zhipin.com/web/geek/jobs?city=101280100

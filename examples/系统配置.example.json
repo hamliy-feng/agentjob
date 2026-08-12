@@ -1,0 +1,111 @@
+{
+  "schema_version": "2.0",
+  "portable": true,
+  "daily_target": 7,
+  "radar": {
+    "cdp_endpoint": "http://127.0.0.1:9227",
+    "local_poll_seconds": 0.5,
+    "playwright_slow_mo_ms": 500,
+    "active_scan_interval_seconds": 300,
+    "security_page_policy": "mark_blocked_and_fallback",
+    "fallback_order": ["browser_9227", "public_index", "company_careers", "external_search"],
+    "no_stealth": true,
+    "no_captcha_bypass": true
+  },
+  "screening": {
+    "strong_threshold": 78,
+    "recommend_threshold": 65,
+    "watch_threshold": 50,
+    "weights": {
+      "positive": {
+        "AI Agent": 12,
+        "Agent": 8,
+        "智能体": 8,
+        "大模型": 8,
+        "LLM": 8,
+        "RAG": 8,
+        "AI产品": 9,
+        "FDE": 12,
+        "Forward Deployed Engineer": 12,
+        "AI驻场": 10,
+        "AI运营": 8,
+        "AI产品助理": 8,
+        "企业AI落地": 8,
+        "B端产品": 6,
+        "Python": 8,
+        "SQL": 6,
+        "ETL": 7,
+        "ELT": 7,
+        "数据清洗": 7,
+        "数据治理": 6,
+        "数据管线": 7,
+        "数据平台": 7,
+        "知识图谱": 10,
+        "自动化": 7,
+        "API": 6,
+        "需求分析": 5,
+        "产品规划": 5,
+        "0到1": 5,
+        "0-1": 5
+      },
+      "negative": {
+        "电话销售": 35,
+        "纯销售": 30,
+        "课程销售": 30,
+        "客服": 20,
+        "劳务派遣": 15
+      }
+    }
+  },
+  "ai": {
+    "enabled": true,
+    "provider": "openai_compatible",
+    "endpoint_env": "BOSS_AI_ENDPOINT",
+    "api_key_env": "BOSS_AI_API_KEY",
+    "model_env": "BOSS_AI_MODEL",
+    "fallback_when_unconfigured": "mark_needs_ai"
+  },
+  "due_diligence": {
+    "enabled": true,
+    "trigger_min_l2_score": 65,
+    "company_cache_hours": 72,
+    "reuse_company_report": true,
+    "anonymous_discussion_is_signal_only": true,
+    "stale_after_days": 180,
+    "required_dimensions": [
+      "company_identity",
+      "business_products",
+      "funding_investors",
+      "operating_and_legal_risk",
+      "company_size_team",
+      "benefits",
+      "work_culture",
+      "public_discussion",
+      "layoff_business_risk",
+      "job_posting_pattern",
+      "salary_competitiveness"
+    ]
+  },
+  "ranking": {
+    "top_limit": 7,
+    "final_weights": {
+      "l2_fit": 0.55,
+      "company_quality": 0.25,
+      "opportunity_quality": 0.20
+    },
+    "opportunity_weights": {
+      "salary": 0.22,
+      "freshness": 0.16,
+      "schedule": 0.20,
+      "recruiter_activity": 0.14,
+      "role_priority": 0.16,
+      "growth": 0.12
+    },
+    "top_requires_confirmed_schedule": true,
+    "top_requires_explicit_salary": true
+  },
+  "gates": {
+    "L5_requires_human_confirmation": true,
+    "L6_unsupervised_chat": false
+  }
+}

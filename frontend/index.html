@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Job Agent · AI 求职工作台</title>
+  <script>document.documentElement.dataset.theme=localStorage.getItem('jobAgentTheme')||'light';</script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-spacer" aria-hidden="true"></div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input id="job-search" type="search" placeholder="搜索职位、公司或技能..." autocomplete="off">
+        <kbd>⌘ K</kbd>
+      </div>
+      <div class="top-actions profile-actions">
+        <button id="resume-btn" class="profile-btn" type="button"><span class="profile-btn-dot"></span><span id="resume-btn-label">上传简历 PDF</span></button>
+        <button id="preferences-btn" class="profile-btn" type="button">求职要求</button>
+        <button id="supplement-btn" class="profile-btn" type="button">补充资料</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" title="切换白天/黑夜模式"><span id="theme-icon">☀</span><span id="theme-label">白天</span></button>
+        <input id="resume-file" type="file" accept="application/pdf,.pdf" hidden>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <section id="favorites-section" class="favorites-section hidden">
+          <div class="favorite-head"><span class="favorite-title">★ 收藏</span><span id="favorite-count" class="muted">0</span></div>
+          <div id="favorite-list" class="job-list favorite-list"></div>
+        </section>
+        <section class="side-head">
+          <div>
+            <span class="eyebrow"><i></i> DAILY PICKS</span>
+            <h1>每日推荐 <b>Top 7</b></h1>
+            <p>严格满足条件并完成背调的岗位</p>
+          </div>
+          <div class="count-badge"><span id="top-count">0</span><small>/ 7</small></div>
+        </section>
+        <div id="top-list" class="job-list top-list"></div>
+
+        <div class="section-divider">
+          <span>其他值得看</span>
+          <span id="qualified-count" class="muted">0</span>
+        </div>
+        <div id="qualified-list" class="job-list qualified-list"></div>
+      </aside>
+
+      <section class="detail-pane">
+        <div id="empty-state" class="empty-state">
+          <div class="empty-orb"></div>
+          <h2>选择一个岗位</h2>
+          <p>左侧是经过 L0→L3 数据链筛选后的真实岗位。</p>
+        </div>
+        <div id="detail-content" class="detail-content hidden"></div>
+      </section>
+    </main>
+  </div>
+  <div id="drawer-backdrop" class="drawer-backdrop hidden"></div>
+  <aside id="profile-drawer" class="profile-drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div><div id="drawer-kicker" class="drawer-kicker">PROFILE</div><h2 id="drawer-title">资料</h2></div>
+      <button id="drawer-close" class="drawer-close" type="button">×</button>
+    </div>
+    <div id="drawer-body" class="drawer-body"></div>
+    <div id="drawer-footer" class="drawer-footer"></div>
+  </aside>
+  <div id="toast" class="toast"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
